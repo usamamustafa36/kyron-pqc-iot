@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kyron Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    header .badge {
+      background: #1db954;
+      color: #000;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    header .badge.waiting {
+      background: #f0a500;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+
+    .card .label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .card .unit {
+      font-size: 1rem;
+      color: #888;
+      margin-left: 4px;
+    }
+
+    .card.green .value { color: #1db954; }
+    .card.blue  .value { color: #4ea8f7; }
+    .card.purple .value { color: #b47cf7; }
+    .card.orange .value { color: #f0a500; }
+
+    .chart-box {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .chart-box h2 {
+      font-size: 0.9rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+
+    .security-bar {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 18px 24px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .security-bar .algo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .security-bar .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1db954;
+    }
+
+    .log-box {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 18px 24px;
+      margin-top: 28px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-box h2 {
+      font-size: 0.9rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .log-entry {
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: #aaa;
+      padding: 3px 0;
+      border-bottom: 1px solid #22252f;
+    }
+
+    .log-entry span.ok { color: #1db954; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Kyron Dashboard</h1>
+  <span class="badge waiting" id="status-badge">Waiting for Pi...</span>
+</header>
+
+<div class="cards">
+  <div class="card green">
+    <div class="label">Temperature</div>
+    <div class="value" id="temp">--<span class="unit">°C</span></div>
+  </div>
+  <div class="card blue">
+    <div class="label">Humidity</div>
+    <div class="value" id="humidity">--<span class="unit">%</span></div>
+  </div>
+  <div class="card purple">
+    <div class="label">Messages Received</div>
+    <div class="value" id="count">0</div>
+  </div>
+  <div class="card orange">
+    <div class="label">Sequence</div>
+    <div class="value" id="seq">--</div>
+  </div>
+</div>
+
+<div class="chart-box">
+  <h2>Live Sensor Readings</h2>
+  <canvas id="chart" height="90"></canvas>
+</div>
+
+<div class="security-bar">
+  <div class="algo"><div class="dot"></div> Kyber-768 Key Exchange</div>
+  <div class="algo"><div class="dot"></div> Dilithium3 Signature Verified</div>
+  <div class="algo"><div class="dot"></div> ASCON-128 Encrypted</div>
+  <div class="algo"><div class="dot"></div> Post-Quantum Secure</div>
+</div>
+
+<div class="log-box">
+  <h2>Message Log</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+  const MAX_POINTS = 30;
+  const labels = [];
+  const tempData = [];
+  const humData = [];
+  let count = 0;
+
+  const ctx = document.getElementById("chart").getContext("2d");
+  const chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Temperature (°C)",
+          data: tempData,
+          borderColor: "#1db954",
+          backgroundColor: "rgba(29,185,84,0.08)",
+          tension: 0.4,
+          fill: true,
+          pointRadius: 3,
+        },
+        {
+          label: "Humidity (%)",
+          data: humData,
+          borderColor: "#4ea8f7",
+          backgroundColor: "rgba(78,168,247,0.08)",
+          tension: 0.4,
+          fill: true,
+          pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      plugins: { legend: { labels: { color: "#aaa" } } },
+      scales: {
+        x: { ticks: { color: "#666" }, grid: { color: "#22252f" } },
+        y: { ticks: { color: "#666" }, grid: { color: "#22252f" } },
+      },
+    },
+  });
+
+  const badge  = document.getElementById("status-badge");
+  const logDiv = document.getElementById("log");
+
+  const evtSource = new EventSource("/stream");
+
+  evtSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+
+    if (data.status === "waiting") return;
+
+    badge.textContent = "Live";
+    badge.classList.remove("waiting");
+
+    document.getElementById("temp").innerHTML     = `${data.temp}<span class="unit">°C</span>`;
+    document.getElementById("humidity").innerHTML = `${data.humidity}<span class="unit">%</span>`;
+    document.getElementById("seq").textContent    = data.seq;
+    count++;
+    document.getElementById("count").textContent = count;
+
+    const t = new Date().toLocaleTimeString();
+    labels.push(t);
+    tempData.push(data.temp);
+    humData.push(data.humidity);
+    if (labels.length > MAX_POINTS) {
+      labels.shift(); tempData.shift(); humData.shift();
+    }
+    chart.update();
+
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    entry.innerHTML = `<span class="ok">[OK]</span> seq=${data.seq}  temp=${data.temp}°C  humidity=${data.humidity}%  — ${t}`;
+    logDiv.prepend(entry);
+    if (logDiv.children.length > 50) logDiv.lastChild.remove();
+  };
+</script>
+
+</body>
+</html>

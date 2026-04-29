@@ -1,0 +1,104 @@
+# ============================================================
+# Compiler and flags
+# ============================================================
+CC      = gcc
+AR      = ar
+ARFLAGS = rcs
+
+CFLAGS = -O2 -Wall \
+         -Iinclude \
+         -Ikyber_sdk \
+         -Idilithium_sdk \
+         -Iascon_sdk \
+         -Isrc/common \
+         -Iutils
+
+# ============================================================
+# SDK directories
+# ============================================================
+KYBER_DIR      = kyber_sdk
+DILITHIUM_DIR  = dilithium_sdk
+ASCON_DIR      = ascon_sdk
+
+KYBER_LIB      = $(KYBER_DIR)/libkyber.a
+DILITHIUM_LIB  = $(DILITHIUM_DIR)/libdilithium.a
+ASCON_LIB      = $(ASCON_DIR)/libascon.a
+
+# ============================================================
+# Source files
+# ============================================================
+
+# Wrapper
+WRAPPER_SRC = src/pqc_test_wrapper.c
+WRAPPER_OBJ = build/pqc_test_wrapper.o
+WRAPPER_LIB = build/libpqctestwrapper.a
+
+# Device layer
+DEVICE_SRC = src/pqc_device.c
+DEVICE_OBJ = build/pqc_device.o
+
+# Randombytes (compiled once)
+RANDOMBYTES_SRC = utils/randombytes.c
+RANDOMBYTES_OBJ = build/randombytes.o
+
+# ============================================================
+# Phony targets
+# ============================================================
+.PHONY: all clean kyber dilithium ascon dirs
+
+# ============================================================
+# Default target
+# ============================================================
+all: dirs kyber dilithium ascon $(WRAPPER_LIB)
+
+# ============================================================
+# Build SDKs
+# ============================================================
+kyber:
+	$(MAKE) -C $(KYBER_DIR)
+
+dilithium:
+	$(MAKE) -C $(DILITHIUM_DIR)
+
+ascon:
+	$(MAKE) -C $(ASCON_DIR)
+
+# ============================================================
+# Build directory
+# ============================================================
+dirs:
+	mkdir -p build
+
+# ============================================================
+# Object compilation
+# ============================================================
+build/randombytes.o: $(RANDOMBYTES_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/pqc_test_wrapper.o: $(WRAPPER_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/pqc_device.o: $(DEVICE_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# ============================================================
+# Wrapper static library
+# ============================================================
+$(WRAPPER_LIB): $(RANDOMBYTES_OBJ) $(WRAPPER_OBJ) \
+                $(KYBER_LIB) $(DILITHIUM_LIB) $(ASCON_LIB)
+	$(AR) $(ARFLAGS) $@ \
+	    $(RANDOMBYTES_OBJ) \
+	    $(WRAPPER_OBJ) \
+	    $(KYBER_LIB) \
+	    $(DILITHIUM_LIB) \
+	    $(ASCON_LIB)
+
+# ============================================================
+# Clean
+# ============================================================
+clean:
+	rm -rf build
+	$(MAKE) -C $(KYBER_DIR) clean || true
+	$(MAKE) -C $(DILITHIUM_DIR) clean || true
+	$(MAKE) -C $(ASCON_DIR) clean || true
+
