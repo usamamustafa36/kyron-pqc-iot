@@ -65,21 +65,21 @@ The PQC literature is dominated by benchmarks on x86 servers. Resource-constrain
 
 ## Build
 
+Requires a C compiler, CMake and `libmosquitto-dev`. Build the three static libraries first, then the MQTT programs:
+
 ```bash
 cd sdk
-cmake -B build
-cmake --build build
+for d in kyber_sdk dilithium_sdk ascon_sdk; do make -C "$d"; done
+cmake -S src -B build-mqtt
+cmake --build build-mqtt
+
+make -f Makefile.testwrapper
 
 cd ../deployment
 ./scripts/provision.sh    # generate keys, install services
 ```
 
-Two-device test:
-```bash
-cd sdk
-make -f Makefile.testwrapper
-./pqc_two_device_test
-```
+The MQTT programs are `build-mqtt/mqtt_pqc_publisher` and `build-mqtt/mqtt_pqc_subscriber`.
 
 ## License
 

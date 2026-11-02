@@ -51,3 +51,27 @@ htmlcov/
 
 # Tool-internal
 .claude/
+sdk/ascon_sdk/ascon_chat_client
+sdk/ascon_sdk/ascon_chat_server
+sdk/ascon_sdk/bench_ascon
+sdk/ascon_sdk/client
+sdk/ascon_sdk/firmware_hash_test
+sdk/ascon_sdk/server
+sdk/ascon_sdk/test_ascon_api
+sdk/client
+sdk/dilithium_sdk/2device
+sdk/dilithium_sdk/combo
+sdk/dilithium_sdk/receiver
+sdk/dilithium_sdk/sender
+sdk/dilithium_sdk/test_dilithium
+sdk/kyber_sdk/test_basic
+sdk/pqc_two_device_test
+sdk/server
+sdk/tests/ascon_only
+sdk/tests/kyber_dili_combo_embedded
+sdk/tests/pqc_combo_fixed
+sdk/tests/pqc_wrapper
+sdk/tests/test_ascon
+sdk/tests/test_device_sim
+sdk/tests/test_dilithium
+sdk/tests/test_kyber

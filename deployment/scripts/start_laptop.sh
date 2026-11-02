@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-command laptop startup: broker + subscriber
-# Usage: bash ~/zainab/two_device_deployment/scripts/start_laptop.sh
+# Usage: bash deployment/scripts/start_laptop.sh
 
 set -e
 

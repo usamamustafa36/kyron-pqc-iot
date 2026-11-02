@@ -7,9 +7,9 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(MOSQUITTO REQUIRED libmosquitto)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-# CMAKE_SOURCE_DIR = /home/zainab/Documents/implementation/src
-# (CMakeLists.txt lives in src/, cmake is run from src/build/)
-set(BASE ${CMAKE_SOURCE_DIR}/..)   # = implementation/
+# CMAKE_SOURCE_DIR is sdk/src when configured with: cmake -S sdk/src -B build
+# Build the static libraries in kyber_sdk, dilithium_sdk and ascon_sdk first.
+set(BASE ${CMAKE_SOURCE_DIR}/..)   # = sdk/
 
 # ── Include paths ─────────────────────────────────────────────────────────────
 #
